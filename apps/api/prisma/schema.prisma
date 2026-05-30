@@ -1,0 +1,188 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String
+  password_hash String
+  role          UserRole @default(user)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  user_courses      UserCourse[]
+  content_progress  ContentProgress[]
+  assessment_attempts AssessmentAttempt[]
+  certificates      Certificate[]
+
+  @@map("users")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  contents    Content[]
+  questions   Question[]
+  user_courses UserCourse[]
+
+  @@map("courses")
+}
+
+model Content {
+  id             String      @id @default(uuid())
+  course_id      String
+  title          String
+  type           ContentType
+  file_key       String
+  order_index    Int
+  duration_seconds Int?
+  total_pages    Int?
+  is_active      Boolean     @default(true)
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  // Relations
+  course         Course            @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  content_progress ContentProgress[]
+
+  @@map("contents")
+}
+
+model UserCourse {
+  id         String   @id @default(uuid())
+  user_id    String
+  course_id  String
+  is_active  Boolean  @default(true)
+  assigned_at DateTime @default(now())
+
+  // Relations
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  course     Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, course_id])
+  @@map("user_courses")
+}
+
+model ContentProgress {
+  id               String   @id @default(uuid())
+  user_id          String
+  content_id       String
+  progress_percent Int      @default(0)
+  last_position    Int      @default(0)
+  is_completed     Boolean  @default(false)
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content          Content  @relation(fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, content_id])
+  @@map("content_progress")
+}
+
+model Question {
+  id         String   @id @default(uuid())
+  course_id  String
+  statement  String
+  is_active  Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  course      Course       @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  alternatives Alternative[]
+  attempt_answers AttemptAnswer[]
+
+  @@map("questions")
+}
+
+model Alternative {
+  id          String  @id @default(uuid())
+  question_id String
+  text        String
+  is_correct  Boolean @default(false)
+  order_index Int
+
+  // Relations
+  question    Question      @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  attempt_answers AttemptAnswer[]
+
+  @@map("alternatives")
+}
+
+model AssessmentAttempt {
+  id         String   @id @default(uuid())
+  user_id    String
+  course_id  String
+  score      Int
+  passed     Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  // Relations
+  user           User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  attempt_answers AttemptAnswer[]
+  certificates   Certificate[]
+
+  @@map("assessment_attempts")
+}
+
+model AttemptAnswer {
+  id           String @id @default(uuid())
+  attempt_id   String
+  question_id  String
+  alternative_id String
+
+  // Relations
+  attempt      AssessmentAttempt @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+  question     Question          @relation(fields: [question_id], references: [id], onDelete: Cascade)
+  alternative  Alternative       @relation(fields: [alternative_id], references: [id], onDelete: Cascade)
+
+  @@map("attempt_answers")
+}
+
+model Certificate {
+  id              String   @id @default(uuid())
+  user_id         String
+  course_id       String
+  attempt_id      String
+  unique_code     String   @unique
+  file_key        String
+  issued_at       DateTime @default(now())
+
+  // Relations
+  user            User              @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  attempt         AssessmentAttempt @relation(fields: [attempt_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, course_id])
+  @@map("certificates")
+}
+
+enum UserRole {
+  admin
+  user
+}
+
+enum ContentType {
+  video
+  pdf
+}
