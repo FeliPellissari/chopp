@@ -12,8 +12,12 @@ app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:3000" }));
 app.use(express.json());
 
+app.get("/", (_req: Request, res: Response) => {
+  res.redirect("/api/health");
+});
+
 app.get("/api/health", (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {

@@ -39,3 +39,7 @@ coverage/
 *.log
 uploads/
 temp/
+
+# Documentation (local files)
+documentacao_sistema_treinamentos.md
+roteiro_desenvolvimento.md
