@@ -21,6 +21,22 @@ async function main() {
   });
 
   console.log('Admin user created:', admin.email);
+
+  const userPassword = await bcrypt.hash('user123', 10);
+
+  const user = await prisma.user.upsert({
+    where: { email: 'user@example.com' },
+    update: {},
+    create: {
+      email: 'user@example.com',
+      name: 'Usuario Comum',
+      password_hash: userPassword,
+      role: 'user',
+      is_active: true,
+    },
+  });
+
+  console.log('User created:', user.email);
 }
 
 main()
