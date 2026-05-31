@@ -33,6 +33,17 @@ export class InvalidTokenError extends Error implements ApiError {
   }
 }
 
+export class ForbiddenError extends Error implements ApiError {
+  statusCode = 403;
+  code = "FORBIDDEN";
+
+  constructor(message = "Access denied: insufficient permissions") {
+    super(message);
+    this.name = "ForbiddenError";
+    Object.setPrototypeOf(this, ForbiddenError.prototype);
+  }
+}
+
 export class TokenRevokedError extends Error implements ApiError {
   statusCode = 401;
   code = "TOKEN_REVOKED";

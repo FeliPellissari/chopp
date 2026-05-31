@@ -4,7 +4,7 @@ import { InvalidTokenError } from "../errors/auth";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback_jwt_secret";
 
-interface TokenPayload {
+interface JwtPayload {
   userId: string;
   email: string;
   role: string;
@@ -13,12 +13,12 @@ interface TokenPayload {
 declare global {
   namespace Express {
     interface Request {
-      user?: TokenPayload;
+      user?: { id: string; role: string };
     }
   }
 }
 
-export const validateToken = (
+export const authMiddleware = (
   req: Request,
   _res: Response,
   next: NextFunction
@@ -33,8 +33,8 @@ export const validateToken = (
   const token = authHeader.substring(7);
 
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as TokenPayload;
-    req.user = payload;
+    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
+    req.user = { id: payload.userId, role: payload.role };
     next();
   } catch {
     next(new InvalidTokenError());
